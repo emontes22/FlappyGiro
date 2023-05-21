@@ -1,6 +1,7 @@
 import pygame
 from pygame.sprite import Group
 from settings import *
+from random import choice, randint
 
 class BG(pygame.sprite.Sprite):
     def __init__(self, groups, scale_factor):
@@ -34,6 +35,9 @@ class Ground(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(bottomleft = (0, WINDOW_HEIGHT))
         self.pos = pygame.math.Vector2(self.rect.topleft)
 
+        # Mask
+        self.mask = pygame.mask.from_surface(self.image)
+
     def update(self, dt):
         self.pos.x -= 360 * dt
         if self.rect.centerx <= 0:
@@ -57,6 +61,9 @@ class Plane(pygame.sprite.Sprite):
         # Movement
         self.gravity = 600
         self.direction = 0
+
+        # Mask
+        self.mask = pygame.mask.from_surface(self.image)
 
     def import_frames(self, scale_factor):
         self.frames = []
@@ -82,8 +89,39 @@ class Plane(pygame.sprite.Sprite):
     def rotate(self):
         rotated_plane = pygame.transform.rotozoom(self.image, -self.direction * 0.06, 1)
         self.image = rotated_plane
+        self.mask = pygame.mask.from_surface(self.image)
 
     def update(self, dt):
         self.apply_gravity(dt)
         self.animate(dt)
         self.rotate()
+
+class Obstacle(pygame.sprite.Sprite):
+    def __init__(self, groups, scale_factor):
+        super().__init__(groups)
+
+        orientation = choice(('up', 'down'))
+        surf = pygame.image.load(f'./Graphics/Obstacles/{choice((0,1))}.png').convert_alpha()
+        self.image = pygame.transform.scale(surf,pygame.math.Vector2(surf.get_size()) * scale_factor)
+
+        x = WINDOW_WIDTH + randint(40,100)
+ 
+        if orientation == 'up':
+            y = WINDOW_HEIGHT + randint(10,50)
+            self.rect = self.image.get_rect(midbottom = (x,y))
+        else:
+            y = randint(-50,-10)
+            self.image = pygame.transform.flip(self.image,False,True)
+            self.rect = self.image.get_rect(midtop = (x,y))
+ 
+        self.pos = pygame.math.Vector2(self.rect.topleft)
+ 
+        # Mask
+        self.mask = pygame.mask.from_surface(self.image)
+ 
+    def update(self,dt):
+        self.pos.x -= 400 * dt
+        self.rect.x = round(self.pos.x)
+        if self.rect.right <= -100:
+            self.kill()
+

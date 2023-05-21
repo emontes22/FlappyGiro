@@ -2,7 +2,7 @@ import pygame
 import sys
 import time
 from settings import *
-from sprites import BG, Ground, Plane
+from sprites import BG, Ground, Plane, Obstacle
 
 
 class Game:
@@ -31,8 +31,17 @@ class Game:
 
         #Sprite setup
         BG(self.all_sprites, self.scale_factor)
-        Ground(self.all_sprites, self.scale_factor)
+        Ground([self.all_sprites, self.collision_sprites], self.scale_factor)
         self.plane = Plane(self.all_sprites, self.scale_factor / 1.9)
+
+        # Timer
+        self.obstacle_timer = pygame.USEREVENT + 1
+        pygame.time.set_timer(self.obstacle_timer, 1400)
+
+    def collisions(self):
+        if pygame.sprite.spritecollide(self.plane, self.collision_sprites, False, pygame.sprite.collide_mask) or self.plane.rect.top <= 0:
+            pygame.quit()
+            sys.exit()
 
     def run(self):
         # Track the last recorded time
@@ -51,9 +60,12 @@ class Game:
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     self.plane.jump()
+                if event.type == self.obstacle_timer:
+                    Obstacle([self.all_sprites, self.collision_sprites], self.scale_factor * 1.1)
 
             #Game Logic
             self.all_sprites.update(dt)
+            self.collisions()
             self.all_sprites.draw(self.display_surface)
 
             # Update the display to show any changes
